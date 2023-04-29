@@ -29,7 +29,7 @@ const scrapeSeats = async () => {
         console.log(new Date().toString() + ": bot found " + data + " open seats for JWG CMSC351");
         if (data > 0) {
             sendMessage('Seats open for JWG CMSC351');
-            console.log(new Date().toString() + "sent message to user");
+            console.log(new Date().toString() + ": bot sent message to user");
             await page.screenshot({ path: '1.png'});
         }
     } catch (err) {
@@ -53,3 +53,5 @@ do {
     console.log(new Date().toString() + ": bot finished waiting")
     seats = await scrapeSeats();
 } while (seats <= 0);
+
+console.log(new Date.toString() + ': bot quitting');
