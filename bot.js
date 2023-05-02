@@ -20,14 +20,16 @@ const scrapeSeats = async () => {
         });
 
         const data = await page.evaluate(() => {
-            const element = document.querySelector('.open-seats-count');
+            let element = document.querySelector('.open-seats-count');
             const seats = element.innerHTML;
-            return seats;
+            element = document.querySelector('.waitlist-count');
+            const waitlist = element.innerHTML;
+            return [seats, waitlist];
         });
 
         await browser.close();
-        console.log(new Date().toString() + ": bot found " + data + " open seats for JWG CMSC351");
-        if (data > 0) {
+        console.log(new Date().toString() + ": bot found " + data[0] + " open seats and " + data[1] + " waitlist seats for JWG CMSC351");
+        if (data[0] > 0 || data[1] > 0) {
             sendMessage('Seats open for JWG CMSC351');
             console.log(new Date().toString() + ": bot sent message to user");
             await page.screenshot({ path: '1.png'});
