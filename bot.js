@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
 import sendMessage from "./send-sms.js";
+import cron from 'node-cron';
 
 const scrapeSeats = async () => {
     console.log(new Date().toString() + ": bot started scraping");
@@ -42,18 +43,28 @@ const scrapeSeats = async () => {
     return data;
 }
 
-let date = new Date();
 let seats = 0;
-let waitSeconds = 0;
-console.log(date + ": bot started");
+console.log(new Date().toString() + ": bot started");
+console.log(new Date().toString() + ": bot waiting till next minute");
 
-do {
-    console.log(new Date().toString() + ": bot waiting till next minute");
-    date = new Date();
-    waitSeconds = (60 - date.getSeconds());
-    await new Promise(r => setTimeout(r, waitSeconds * 1000));
-    console.log(new Date().toString() + ": bot finished waiting")
+var task = cron.schedule('* * * * *', async () => {
+    console.log(new Date().toString() + ": bot finished waiting");
     seats = await scrapeSeats();
-} while (seats <= 0);
+    console.log(new Date().toString() + ": bot waiting till next minute");
+});
 
-console.log(new Date.toString() + ': bot quitting');
+task.start();
+
+await new Promise(resolve => {
+    function checkSeats() {
+        if (seats > 0)
+            resolve();
+        else
+            setTimeout(checkSeats, 1000 * 60 * 5);
+    }
+    checkSeats();
+});
+
+task.stop();
+
+console.log(new Date().toString() + ': bot quitting');
