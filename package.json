@@ -8,5 +8,8 @@
     "node-cron": "^3.0.2",
     "puppeteer": "^19.11.1",
     "twilio": "^4.10.0"
+  },
+  "overrides": {
+    "semver": "^7.5.3"
   }
 }
