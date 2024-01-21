@@ -1,46 +1,45 @@
-import puppeteer from "puppeteer";
+import axios from 'axios';
+import { load } from 'cheerio';
 import * as dotenv from 'dotenv';
 dotenv.config();
-import express from 'express';
-import sendMessage from "./send-sms.js";
+import sendMessage from './send-sms.js';
 import cron from 'node-cron';
 
 const scrapeSeats = async () => {
     console.log(new Date().toString() + ": bot started scraping");
-    const data = 0;
 
     try {
-        const browser = await puppeteer.launch({ headless: 'new'});
-        const page = await browser.newPage();
+        await axios.get(process.env.LINK)
+            .then(async ({ data }) => {
+                const $ = load(data);
 
-        await page.goto(process.env.LINK);
-        await page.setViewport({width: 1080, height: 1024});
+                // Get open seat count
+                const seats = $('.open-seats-count')
+                    .map((_, product) => {
+                        const $product = $(product);
+                        return $product.text();
+                    })
+                    .toArray();
+                
+                // Get waitlist count
+                const waitlist = $('.waitlist-count')
+                    .map((_, product) => {
+                        const $product = $(product);
+                        return $product.text();
+                    })
+                    .toArray();
 
-        await page.waitForSelector('.open-seats-count', {
-            visible: true
-        });
-
-        const data = await page.evaluate(() => {
-            let element = document.querySelector('.open-seats-count');
-            const seats = element.innerHTML;
-            element = document.querySelector('.waitlist-count');
-            const waitlist = element.innerHTML;
-            return [seats, waitlist];
-        });
-
-        await browser.close();
-        console.log(new Date().toString() + ": bot found " + data[0] + " open seats and " + data[1] + " waitlist seats for JWG CMSC351");
-        if (data[0] > 0 || data[1] > 0) {
-            sendMessage('Seats open for JWG CMSC351');
-            console.log(new Date().toString() + ": bot sent message to user");
-            await page.screenshot({ path: '1.png'});
+                console.log(new Date().toString() + ": bot found " + seats[0] + " open seats and "
+                            + waitlist[0] + " waitlist seats for JWG CMSC351");
+                if (seats[0] > 0 || waitlist[0] > 0) {
+                    sendMessage('Seats open for JWG CMSC351');
+                    console.log(new Date().toString() + ": bot sent message to user");
+                }
+            });
+        } catch (err) {
+            sendMessage("something went wrong");
+            console.log(new Date().toString() + ": " + err);
         }
-    } catch (err) {
-        console.log(new Date().toString() + ": " + err);
-    }
-
-    console.log(new Date().toString() + ": bot scraping ended");
-    return data;
 }
 
 let seats = 0;
@@ -64,7 +63,3 @@ await new Promise(resolve => {
     }
     checkSeats();
 });
-
-task.stop();
-
-console.log(new Date().toString() + ': bot quitting');
